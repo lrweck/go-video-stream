@@ -10,5 +10,5 @@ Fun experiment to get a grip with Fiber and file serving with Go.
 http://localhost:8000/videos
  > lists all the videos available
 
-http://localhost:8000/videos/:id
+http://localhost:8000/videos/video/:id
  > shows the video on screen
