@@ -9,29 +9,25 @@ type Video struct {
 	Name     string        `json:"Name"`
 }
 
-// var (
-// 	AllVideos :=
-// )
-
 func getVideos() []Video {
 
 	return []Video{
 		{
 			Id:       "tom-and-jerry",
 			Poster:   "https://image.tmdb.org/t/p/w500/fev8UFNFFYsD5q7AcYS8LyTzqwl.jpg",
-			Duration: 3 * time.Minute,
+			Duration: 144 * time.Second,
 			Name:     "Tom & Jerry",
 		},
 		{
 			Id:       "soul",
 			Poster:   "https://image.tmdb.org/t/p/w500/kf456ZqeC45XTvo6W9pW5clYKfQ.jpg",
-			Duration: 4 * time.Minute,
+			Duration: 139 * time.Second,
 			Name:     "Soul",
 		},
 		{
 			Id:       "outside-the-wire",
 			Poster:   "https://image.tmdb.org/t/p/w500/lOSdUkGQmbAl5JQ3QoHqBZUbZhC.jpg",
-			Duration: 2 * time.Minute,
+			Duration: 152 * time.Second,
 			Name:     "Outside the wire",
 		},
 	}

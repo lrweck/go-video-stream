@@ -9,6 +9,7 @@ import (
 	"os/signal"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
@@ -16,15 +17,19 @@ import (
 
 func main() {
 
+	// Starts a new Mux
 	app := fiber.New()
 
+	// Uses CORS
 	app.Use(cors.New())
+
+	// Groups in /videos
 	videos := app.Group("/videos")
 	videos.Get("/", listVideos)
 	videos.Get("video/:id", getVideo)
 
+	// Create os.Signal channel to intercept errors and interruptions
 	c := make(chan os.Signal, 1)
-
 	signal.Notify(c, os.Interrupt)
 
 	go func() {
@@ -52,7 +57,9 @@ func listVideos(c *fiber.Ctx) error {
 
 func getVideo(c *fiber.Ctx) error {
 
-	videoPath := fmt.Sprintf("./assets/%s.mp4", c.Params("id"))
+	videoName := c.Params("id")
+	videoPath := fmt.Sprintf("./assets/%s.mp4", videoName)
+
 	videoStat, err := os.Stat(videoPath)
 	if err != nil {
 		log.Print(fmt.Sprintf("error opening file '%s': %s", videoPath, err))
@@ -73,29 +80,41 @@ func getVideo(c *fiber.Ctx) error {
 			end, _ = strconv.Atoi(parts[1])
 		}
 
-		chunkSize := (end - start) + 1
+		remainingSize := (end - start) + 1
 
 		f, err := os.Open(videoPath)
-
 		if err != nil {
 			log.Print(fmt.Sprintf("error opening file '%s': %s", videoPath, err))
 			return err
 		}
 
+		// Seek file to start of Range
 		f.Seek(int64(start), 0)
-		log.Printf("Reading file from %d", start)
 
 		c.Set("Content-Range", fmt.Sprintf("bytes %d-%d/%d", start, end, fileSize))
 		c.Set("Accept-Ranges", "bytes")
-		c.Set("Content-Length", strconv.Itoa(int(chunkSize)))
+		c.Set("Content-Length", strconv.Itoa(int(remainingSize)))
 		c.Set("Content-Type", "video/mp4")
 
-		// Send in 1% at a time.
+		dur := 1 * time.Minute
+		for _, v := range getVideos() {
+			if v.Id == videoName {
+				dur = v.Duration
+				break
+			}
+		}
+
+		// Send in 20 seconds at a time.
+		// (100MB / 100 seconds = 1MB/s) * 20
+		buf := fileSize / int64(dur.Seconds()) * 20
+
+		// Set header to Patial Content and send stream.
 		c.Status(206)
-		c.SendStream(f, int(fileSize)/100)
+		c.SendStream(f, int(buf))
 
 	} else {
 
+		// If no header Range is found, stream whole video.
 		c.Set("Content-Length", strconv.Itoa(int(fileSize)))
 		c.Set("Content-Type", "video/mp4")
 
